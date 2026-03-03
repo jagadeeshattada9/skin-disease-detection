@@ -28,7 +28,7 @@ def load_model():
 model = load_model()
 
 # ---------------------------------
-# Load Class Names (List format)
+# Load Class Names
 # ---------------------------------
 class_names = np.load("class_names.npy", allow_pickle=True)
 
@@ -36,26 +36,39 @@ class_names = np.load("class_names.npy", allow_pickle=True)
 # Upload Image
 # ---------------------------------
 uploaded_file = st.file_uploader(
-    "Choose an image...",
+    "Choose a skin lesion image...",
     type=["jpg", "jpeg", "png"]
 )
 
 # ---------------------------------
-# Prediction
+# Prediction Section
 # ---------------------------------
 if uploaded_file is not None:
 
-    image = Image.open(uploaded_file).convert("RGB")
-    image = image.resize((224, 224))
+    try:
+        # Open and preprocess image
+        image = Image.open(uploaded_file).convert("RGB")
+        image = image.resize((224, 224))
 
-    st.image(image, caption="Uploaded Image", width=350)
+        st.image(image, caption="Uploaded Image", width=300)
 
-    img_array = np.array(image) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+        img_array = np.array(image) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
 
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction)
+        # Model Prediction
+        prediction = model.predict(img_array)
+        confidence = np.max(prediction)
+        predicted_class = np.argmax(prediction)
 
-    disease_name = class_names[predicted_class]
+        # Confidence Threshold
+        THRESHOLD = 0.75  # Adjust between 0.70 - 0.85 if needed
 
-    st.success(f"🩺 Predicted Disease: {disease_name}")
+        if confidence < THRESHOLD:
+            st.error("❌ This does not appear to be a valid skin lesion image. Please upload a proper skin disease image.")
+        else:
+            disease_name = class_names[predicted_class]
+            st.success(f"🩺 Predicted Disease: {disease_name}")
+            st.info(f"Confidence: {confidence*100:.2f}%")
+
+    except Exception as e:
+        st.error("⚠️ Error processing image. Please upload a valid image file.")
