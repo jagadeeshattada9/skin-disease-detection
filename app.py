@@ -4,7 +4,7 @@ import tensorflow as tf
 from PIL import Image
 
 # ---------------------------------
-# Page Config
+# Page Configuration
 # ---------------------------------
 st.set_page_config(
     page_title="Skin Disease Detection",
@@ -16,7 +16,7 @@ st.title("🩺 Skin Disease Detection System")
 st.write("Upload a skin lesion image to detect the disease.")
 
 # ---------------------------------
-# Load Model
+# Load Model (Cached)
 # ---------------------------------
 @st.cache_resource
 def load_model():
@@ -33,7 +33,7 @@ model = load_model()
 class_names = np.load("class_names.npy", allow_pickle=True)
 
 # ---------------------------------
-# Upload Image
+# File Upload
 # ---------------------------------
 uploaded_file = st.file_uploader(
     "Choose a skin lesion image...",
@@ -46,27 +46,50 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
 
     try:
-        # Open and preprocess image
         image = Image.open(uploaded_file).convert("RGB")
         image = image.resize((224, 224))
 
         st.image(image, caption="Uploaded Image", width=300)
 
-        img_array = np.array(image) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+        img_array = np.array(image)
 
-        # Model Prediction
-        prediction = model.predict(img_array)
-        confidence = np.max(prediction)
-        predicted_class = np.argmax(prediction)
+        # ---------------------------------
+        # SKIN DETECTION FILTER
+        # ---------------------------------
+        r = img_array[:, :, 0]
+        g = img_array[:, :, 1]
+        b = img_array[:, :, 2]
 
-        # Confidence Threshold
-        THRESHOLD = 0.75  # Adjust between 0.70 - 0.85 if needed
+        skin_pixels = np.logical_and.reduce((
+            r > 95,
+            g > 40,
+            b > 20,
+            (np.max(img_array, axis=2) - np.min(img_array, axis=2)) > 15,
+            np.abs(r - g) > 15,
+            r > g,
+            r > b
+        ))
 
-        if confidence < THRESHOLD:
-            st.error("❌ This does not appear to be a valid skin lesion image. Please upload a proper skin disease image.")
+        skin_ratio = np.sum(skin_pixels) / (224 * 224)
+
+        # If less than 20% skin pixels → Reject image
+        if skin_ratio < 0.20:
+            st.error("❌ This does not appear to be a skin image. Please upload a proper skin lesion image.")
+        
         else:
+            # ---------------------------------
+            # MODEL PREDICTION
+            # ---------------------------------
+            img_array = img_array / 255.0
+            img_array = np.expand_dims(img_array, axis=0)
+
+            with st.spinner("Analyzing image..."):
+                prediction = model.predict(img_array)
+
+            confidence = np.max(prediction)
+            predicted_class = np.argmax(prediction)
             disease_name = class_names[predicted_class]
+
             st.success(f"🩺 Predicted Disease: {disease_name}")
             st.info(f"Confidence: {confidence*100:.2f}%")
 
