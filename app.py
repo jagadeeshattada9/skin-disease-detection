@@ -93,7 +93,7 @@ if uploaded_file is not None:
             # ---------------------------------
             # CONFIDENCE THRESHOLD
             # ---------------------------------
-            if confidence < 0.70:
+            if confidence < 0.50:
                 st.success("✅ No skin disease detected (Normal Skin)")
                 st.info(f"Model Confidence: {confidence*100:.2f}%")
             else:
