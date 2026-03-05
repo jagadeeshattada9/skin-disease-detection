@@ -72,10 +72,10 @@ if uploaded_file is not None:
 
         skin_ratio = np.sum(skin_pixels) / (224 * 224)
 
-        # If less than 20% skin pixels → Reject image
-        if skin_ratio < 0.20:
+        # Reject non-skin images
+        if skin_ratio < 0.35:
             st.error("❌ This does not appear to be a skin image. Please upload a proper skin lesion image.")
-        
+
         else:
             # ---------------------------------
             # MODEL PREDICTION
@@ -90,8 +90,15 @@ if uploaded_file is not None:
             predicted_class = np.argmax(prediction)
             disease_name = class_names[predicted_class]
 
-            st.success(f"🩺 Predicted Disease: {disease_name}")
-            st.info(f"Confidence: {confidence*100:.2f}%")
+            # ---------------------------------
+            # CONFIDENCE THRESHOLD
+            # ---------------------------------
+            if confidence < 0.70:
+                st.success("✅ No skin disease detected (Normal Skin)")
+                st.info(f"Model Confidence: {confidence*100:.2f}%")
+            else:
+                st.success(f"🩺 Predicted Disease: {disease_name}")
+                st.info(f"Confidence: {confidence*100:.2f}%")
 
     except Exception as e:
         st.error("⚠️ Error processing image. Please upload a valid image file.")
