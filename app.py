@@ -14,14 +14,14 @@ st.set_page_config(
 )
 
 # ----------------------------------------------------
-# Custom CSS
+# CSS Styling
 # ----------------------------------------------------
 st.markdown("""
 <style>
 
 body{
 background:#f4f6f9;
-font-family: 'Segoe UI', sans-serif;
+font-family:'Segoe UI',sans-serif;
 }
 
 .block-container{
@@ -41,13 +41,37 @@ margin-bottom:25px;
 }
 
 .hero h1{
-font-size:38px;
+font-size:36px;
 margin-bottom:10px;
 }
 
 .hero p{
 font-size:16px;
 opacity:0.9;
+}
+
+/* WORKFLOW */
+
+.workflow{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+margin-bottom:25px;
+}
+
+.step{
+background:white;
+border-radius:12px;
+padding:12px;
+text-align:center;
+border:1px solid #e1e4e8;
+font-size:14px;
+box-shadow:0 2px 6px rgba(0,0,0,0.05);
+}
+
+.step span{
+font-size:22px;
+display:block;
 }
 
 /* IMAGE */
@@ -58,7 +82,7 @@ box-shadow:0 6px 20px rgba(0,0,0,0.15);
 margin-top:10px;
 }
 
-/* RESULT BOX */
+/* RESULT */
 
 .result-box{
 padding:20px;
@@ -82,7 +106,7 @@ background:#ebf5fb;
 border-left:6px solid #3498db;
 }
 
-/* FILE UPLOADER */
+/* UPLOADER */
 
 [data-testid="stFileUploader"]{
 background:white;
@@ -118,6 +142,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------
+# Steps Section
+# ----------------------------------------------------
+st.markdown("""
+<div class="workflow">
+
+<div class="step">
+<span>📤</span>
+Upload Image
+</div>
+
+<div class="step">
+<span>🔍</span>
+Verify Skin
+</div>
+
+<div class="step">
+<span>🧠</span>
+Analyze
+</div>
+
+<div class="step">
+<span>📋</span>
+Results
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+# ----------------------------------------------------
 # Load Model
 # ----------------------------------------------------
 @st.cache_resource
@@ -148,12 +201,11 @@ if uploaded_file is not None:
 
         image = Image.open(uploaded_file).convert("RGB")
         image = image.resize((224,224))
-
         img_array = np.array(image)
 
         # Show Image
         st.markdown("<div class='center-img'>", unsafe_allow_html=True)
-        st.image(image, width=350)
+        st.image(image,width=350)
         st.markdown("</div>", unsafe_allow_html=True)
 
         # Skin Detection
@@ -195,8 +247,8 @@ if uploaded_file is not None:
 
             conf_percent = confidence * 100
 
-            # Reduced threshold (40% lower → 0.30)
-            if confidence < 0.40:
+            # Reduced confidence threshold
+            if confidence < 0.30:
 
                 st.markdown(f"""
                 <div class="result-box success">
@@ -218,7 +270,6 @@ if uploaded_file is not None:
                 """, unsafe_allow_html=True)
 
     except:
-
         st.error("Invalid image file")
 
 # ----------------------------------------------------
